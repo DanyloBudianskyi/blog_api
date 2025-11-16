@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import User, Category, Tag, Post, Comment
+from ..models import User, Category, Tag, Post, Comment, Like, Bookmark
 
 class UserSerializer(serializers.ModelSerializer):
     posts_count = serializers.IntegerField(source="get_posts_count", read_only=True)
@@ -61,6 +61,10 @@ class PostListSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
     tags = TagSerializer(many=True, read_only=True)
+    likes_count = serializers.IntegerField(read_only=True)
+    is_liked_by_user = serializers.SerializerMethodField()
+    bookmarks_count = serializers.IntegerField(read_only=True)
+    is_bookmarked_by_user = serializers.SerializerMethodField()
 
     class Meta:
         model = Post
@@ -69,7 +73,21 @@ class PostListSerializer(serializers.ModelSerializer):
             "excerpt", "author", 
             "category", "tags",
             "views_count", "published_at",
+            'likes_count', 'is_liked_by_user',
+            'bookmarks_count', 'is_bookmarked_by_user'
         ]
+
+    def get_is_liked_by_user(self, obj):
+        user = self.context.get("request").user
+        if user.is_anonymous:
+            return False
+        return obj.likes.filter(user=user).exists()
+
+    def get_is_bookmarked_by_user(self, obj):
+        user = self.context.get("request").user
+        if user.is_anonymous:
+            return False
+        return obj.bookmarks.filter(user=user).exists()
 
 class PostDetailSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField()
@@ -97,3 +115,16 @@ class PostDetailSerializer(serializers.ModelSerializer):
 
     def get_comments_count(self, obj):
         return obj.get_comments_count()
+
+
+class LikeSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+
+    class Meta:
+        model = Like
+        fields = ['user', 'created_at']
+
+class BookmarkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bookmark
+        fields = ['post', 'created_at']

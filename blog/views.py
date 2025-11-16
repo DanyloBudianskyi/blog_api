@@ -6,7 +6,7 @@ from django.db.models import Count, Sum, Avg
 from rest_framework.response import Response
 
 from .models import User, Category, Post, Tag
-from blog.serializers.serializers import CategorySerializer, UserSerializer, PostListSerializer, PostDetailSerializer, CommentSerializer
+from blog.serializers.serializers import CategorySerializer, PostListSerializer, PostDetailSerializer, LikeSerializer
 from blog.serializers.statistics import BlogStatisticsSerializer, CategoryStatisticsSerializer, TopPostSerializer, TopAuthorSerializer
 # Create your views here.
 
@@ -36,7 +36,8 @@ class MyPostListApiView(generics.ListAPIView):
 class PostDetailDeleteUpdateApiView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.select_related('author', 'category').prefetch_related('tags', 'comments__author', 'comments__replies__author')
     serializer_class = PostDetailSerializer
-    lookup_url_kwarg = 'post_id'
+    lookup_field = 'slug'
+    lookup_url_kwarg = 'post_slug'
 
     def get_permissions(self):
         self.permission_classes = [AllowAny]
@@ -96,6 +97,32 @@ class TagPostsAPIView(generics.ListAPIView):
             tags__slug=tag_slug,
             status='published'
         ).select_related('author', 'category').prefetch_related('tags')
+
+#Лайки
+class PostLikesListAPIView(generics.ListAPIView):
+    serializer_class = LikeSerializer
+
+    def get_queryset(self):
+        post = Post.objects.get(slug=self.kwargs['slug'])
+        return post.likes.all()
+
+class PostLikesCountAPIView(APIView):
+    def get(self, request, slug):
+        post = get_object_or_404(Post, slug=slug)
+        return Response({"likes_count": post.likes.count()})
+
+#Закладки
+class MyBookmarksAPIView(generics.ListAPIView):
+    serializer_class = PostListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Post.objects.filter(bookmarks__user=self.request.user).distinct()
+
+class PostBookmarksCountAPIView(APIView):
+    def get(self, request, slug):
+        post = get_object_or_404(Post, slug=slug)
+        return Response({"bookmarks_count": post.bookmarks.count()})
 
 # Статистика
 class BlogStatisticsAPIView(APIView):

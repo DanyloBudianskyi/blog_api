@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, Category, Tag, Post, Comment
+from .models import User, Category, Tag, Post, Comment, Like, Bookmark
 
 # Register your models here.
 @admin.register(User)
@@ -26,6 +26,18 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ("name",)
     prepopulated_fields = {"slug": ("name",)}
 
+class LikeInline(admin.TabularInline):
+    model = Like
+    extra = 0
+    autocomplete_fields = ("user",)
+    readonly_fields = ("created_at",)
+
+class BookmarkInline(admin.TabularInline):
+    model = Bookmark
+    extra = 0
+    autocomplete_fields = ("user",)
+    readonly_fields = ("created_at",)
+
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = ("title", "author", "category", "status", "views_count", "created_at")
@@ -33,6 +45,7 @@ class PostAdmin(admin.ModelAdmin):
     search_fields = ("title", "content", "author__username")
     prepopulated_fields = {"slug": ("title",)}
     autocomplete_fields = ("author", "category", "tags")
+    inlines = [LikeInline, BookmarkInline]
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
