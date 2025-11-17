@@ -128,3 +128,24 @@ class BookmarkSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bookmark
         fields = ['post', 'created_at']
+
+class AuthorSerializer(serializers.ModelSerializer):
+    followers_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ["id", "username", "first_name", "last_name", "followers_count"]
+
+class AuthorDetailSerializer(serializers.ModelSerializer):
+    followers_count = serializers.IntegerField(read_only=True)
+    posts_count = serializers.IntegerField(read_only=True)
+    total_views = serializers.IntegerField(read_only=True)
+    total_likes = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id", "username", "first_name", "last_name",
+            "followers_count", "posts_count",
+            "total_views", "total_likes"
+        ]

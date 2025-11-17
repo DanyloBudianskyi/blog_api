@@ -6,7 +6,7 @@ from django.db.models import Count, Sum, Avg
 from rest_framework.response import Response
 
 from .models import User, Category, Post, Tag
-from blog.serializers.serializers import CategorySerializer, PostListSerializer, PostDetailSerializer, LikeSerializer
+from blog.serializers.serializers import CategorySerializer, PostListSerializer, PostDetailSerializer, LikeSerializer, AuthorSerializer, AuthorDetailSerializer
 from blog.serializers.statistics import BlogStatisticsSerializer, CategoryStatisticsSerializer, TopPostSerializer, TopAuthorSerializer
 # Create your views here.
 
@@ -124,6 +124,49 @@ class PostBookmarksCountAPIView(APIView):
         post = get_object_or_404(Post, slug=slug)
         return Response({"bookmarks_count": post.bookmarks.count()})
 
+#Підписки та автори
+class AuthorsListAPIView(generics.ListAPIView):
+    serializer_class = AuthorSerializer
+
+    def get_queryset(self):
+        return (
+            User.objects.annotate(
+                followers_count=Count("followers"),
+            )
+            .filter(posts__isnull=False)
+            .distinct()
+        )
+
+class AuthorDetailAPIView(generics.RetrieveAPIView):
+    serializer_class = AuthorDetailSerializer
+    queryset = User.objects.all()
+    lookup_field = "id"
+
+    def get_queryset(self):
+        return User.objects.annotate(
+            followers_count=Count("followers"),
+            posts_count=Count("posts", distinct=True),
+            total_likes=Count("posts__likes", distinct=True),
+            total_views=Sum("posts__views_count"),
+        )
+
+class AuthorPostsAPIView(generics.ListAPIView):
+    serializer_class = PostListSerializer
+
+    def get_queryset(self):
+        return Post.objects.filter(author_id=self.kwargs["id"])
+
+class AuthorFollowersAPIView(generics.ListAPIView):
+    serializer_class = AuthorSerializer
+
+    def get_queryset(self):
+        return User.objects.filter(
+            following__author_id=self.kwargs["id"]
+        ).annotate(
+            followers_count=Count("followers")
+        )
+
+
 # Статистика
 class BlogStatisticsAPIView(APIView):
     def get(self, request):
@@ -177,3 +220,28 @@ class CategoryStatisticsAPIView(APIView):
 
         serializer = CategoryStatisticsSerializer(data, many=True)
         return Response(serializer.data)
+
+class AuthorStatsAPIView(APIView):
+    def get(self, request, id):
+        stats = User.objects.filter(id=id).annotate(
+            posts_count=Count("posts", distinct=True),
+            followers_count=Count("followers"),
+            total_views=Sum("posts__views_count"),
+            total_likes=Count("posts__likes", distinct=True)
+        ).values(
+            "posts_count", "followers_count", "total_views", "total_likes"
+        ).first()
+
+        return Response(stats)
+
+class TopAuthorsAPIView(generics.ListAPIView):
+    serializer_class = AuthorSerializer
+
+    def get_queryset(self):
+        return (
+            User.objects.annotate(
+                posts_count=Count("posts")
+            )
+            .filter(posts_count__gt=0)
+            .order_by("-posts_count")[:10]
+        )

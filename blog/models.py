@@ -126,6 +126,8 @@ class Like(models.Model):
 
     class Meta:
         unique_together = ('post', 'user')
+        verbose_name = "Лайк"
+        verbose_name_plural = "Лайки"
 
     def __str__(self):
         return f"{self.user} → {self.post}"
@@ -137,6 +139,21 @@ class Bookmark(models.Model):
 
     class Meta:
         unique_together = ('post', 'user')
+        verbose_name = "Закладка"
+        verbose_name_plural = "Закладки"
 
     def __str__(self):
         return f"{self.user} ⭐ {self.post}"
+    
+class Follow(models.Model):
+    author = models.ForeignKey(User, related_name='followers', on_delete=models.CASCADE)
+    follower = models.ForeignKey(User, related_name='following', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('author', 'follower')
+        verbose_name = "Підписка"
+        verbose_name_plural = "Підписки"
+
+    def __str__(self):
+        return f"{self.follower} → {self.author}"

@@ -22,4 +22,11 @@ urlpatterns = [
     
     path("statistics/blog/", views.BlogStatisticsAPIView.as_view(), name="blog-statistics"),
     path("statistics/categories/", views.CategoryStatisticsAPIView.as_view(), name="category-statistics"),
+
+    path("authors/", views.AuthorsListAPIView.as_view(), name="authors_list"),
+    path("authors/top/", views.TopAuthorsAPIView.as_view(), name="top_authors"),
+    path("authors/<int:id>/", views.AuthorDetailAPIView.as_view(), name="author_detail"),
+    path("authors/<int:id>/posts/", views.AuthorPostsAPIView.as_view(), name="author_posts"),
+    path("authors/<int:id>/followers/", views.AuthorFollowersAPIView.as_view(), name="author_followers"),
+    path("authors/<int:id>/stats/", views.AuthorStatsAPIView.as_view(), name="author_stats"),
 ]

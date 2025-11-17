@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, Category, Tag, Post, Comment, Like, Bookmark
+from .models import User, Category, Tag, Post, Comment, Like, Bookmark, Follow
 
 # Register your models here.
 @admin.register(User)
@@ -53,3 +53,11 @@ class CommentAdmin(admin.ModelAdmin):
     list_filter = ("is_approved", "created_at")
     search_fields = ("content", "author__username", "post__title")
     autocomplete_fields = ("author", "post", "parent")
+
+
+@admin.register(Follow)
+class FollowAdmin(admin.ModelAdmin):
+    list_display = ("author", "follower", "created_at")
+    search_fields = ("author__username", "follower__username")
+    list_filter = ("created_at",)
+    autocomplete_fields = ("author", "follower")
