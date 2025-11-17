@@ -1,19 +1,26 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import generics
+from rest_framework import generics, filters
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.db.models import Count, Sum, Avg
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import User, Category, Post, Tag
 from blog.serializers.serializers import CategorySerializer, PostListSerializer, PostDetailSerializer, LikeSerializer, AuthorSerializer, AuthorDetailSerializer
 from blog.serializers.statistics import BlogStatisticsSerializer, CategoryStatisticsSerializer, TopPostSerializer, TopAuthorSerializer
+from blog.filters import PostFilter
 # Create your views here.
 
 #Пости
 class PostListCreateApiView(generics.ListCreateAPIView):
     queryset = Post.objects.filter(status='published').select_related('author', 'category').prefetch_related('tags')
     serializer_class = PostListSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = PostFilter
+    search_fields = ['title', 'excerpt']
+    ordering_fields = ['created_at', 'views_count', 'likes_count']
+    ordering = ['-created_at']
 
     def get_permissions(self):
         self.permission_classes = [AllowAny]
